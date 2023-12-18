@@ -1,1 +1,5 @@
-./tester/target
+**/target
+a
+b
+cli
+main
