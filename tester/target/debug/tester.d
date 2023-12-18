@@ -1,1 +1,1 @@
-/home/razvan/dev/conway/tester/target/debug/tester: /home/razvan/dev/conway/tester/src/main.rs /home/razvan/dev/conway/tester/src/tester/gen.rs /home/razvan/dev/conway/tester/src/tester/mod.rs /home/razvan/dev/conway/tester/src/tester/test.rs
+/home/razvan/dev/conway-asm/tester/target/debug/tester: /home/razvan/dev/conway-asm/tester/src/main.rs /home/razvan/dev/conway-asm/tester/src/tester/gen.rs /home/razvan/dev/conway-asm/tester/src/tester/mod.rs /home/razvan/dev/conway-asm/tester/src/tester/test.rs
