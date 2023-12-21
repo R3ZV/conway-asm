@@ -1,30 +1,32 @@
 use rand::Rng;
 use std::io::Error;
 
+#[derive(PartialEq, Eq, Hash)]
 pub struct TestCase {
-    // number of lines in the matrix
+    /// number of lines in the matrix
     n: u32,
 
-    // number of columns in the matrix
+    /// number of columns in the matrix
     m: u32,
 
-    // number of alive cells
+    /// number of alive cells
     p: u32,
 
-    // alive cells positions
+    /// alive cells positions
     pos: Vec<Cord>,
 
-    // desired generation
+    /// desired generation
     k: u32,
 
-    // either 0 (CRYPTING) or 1 (DECRYPTION)
+    /// either 0 (CRYPTING) or 1 (DECRYPTION)
     opr: u32,
 
-    // what to CRYPT / DECRYPT
-    // we crypt into a hex value
+    /// what to CRYPT / DECRYPT
+    /// we crypt into a hex value
     message: String,
 }
 
+#[derive(PartialEq, Eq, Hash)]
 struct Cord {
     x: u32,
     y: u32,
@@ -42,6 +44,8 @@ impl TestCase {
             message,
         }
     }
+
+    /// random generates a random test case based on the problem constrains
     pub fn random(task: &String) -> Self {
         let mut rng = rand::thread_rng();
 
@@ -75,7 +79,7 @@ impl TestCase {
             let len = rng.gen_range(1..=30);
             for _ in 0..len {
                 if test.opr == 1 {
-                    if test.message.len() == 0 {
+                    if test.message.is_empty() {
                         test.message += "0x";
                     }
                     let num = rng.gen_range(0..=15);
@@ -95,8 +99,10 @@ impl TestCase {
                 }
             }
         }
-        return test;
+        test
     }
+
+    /// write will try to write your test case into a file name file_name
     pub fn write(&self, file_name: String) -> Result<(), Error> {
         let mut test: String = String::new();
         test += &format!("{}\n", self.n);
