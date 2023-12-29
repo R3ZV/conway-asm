@@ -142,36 +142,22 @@ assembly solution against a C++ solution.
 - Make
 
 # Run on your machine:
-```
-gh repo clone R3ZV/conway-asm                       // using GitHub CLI
-git clone git@github.com:R3ZV/conway-asm.git        // using Git with SSH
-git clone https://github.com/R3ZV/conway-asm.git    // using Git with https
+```console
+$ gh repo clone R3ZV/conway-asm                       // using GitHub CLI
+$ git clone git@github.com:R3ZV/conway-asm.git        // using Git with SSH
+$ git clone https://github.com/R3ZV/conway-asm.git    // using Git with https
 
-cd conway-asm
+$ cd conway-asm
 
-make task0
-make task1
-make task2
+$ make task0
+$ make task1
+$ make task2
 
 // To stress test
 
-bash build-cli
-./cli <file_to_be_tested> <file_to_test_against> <task_to_gen_for>:
+$ bash build-cli
+$ ./cli <file_to_be_tested> <file_to_test_against> <task_to_gen_for>:
 
 // e.g.:
 // ./cli 0x00.s 0x00.cpp 0:
 ```
-
-TODO
-
-# To do asm
-- [ ] Read matrix from stdin
-- [ ] Go through itterations
-- [ ] Count alive neighbours
-- [ ] Check state
-- [ ] Update
-- [ ] Copy to new matrix
-- [ ] Print matrix
-
-# To do tester
-- [ ] Run against solutions
