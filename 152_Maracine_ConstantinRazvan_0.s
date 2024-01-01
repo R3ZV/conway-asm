@@ -10,25 +10,24 @@ p: .space 4
 # we will round up to 4 * 25 * 25 just to be safe
 matrix: .space 2500
 
-matrix_copy: .space 2500
-
-# The position array can have at most 4 * 18 * 18 elements
-# we will round up to 4 * 20 * 20
-pos_x: .space 800
-pos_y: .space 800
+matrix_aux: .space 2500
 
 # temp variables to read coordinates
 x: .space 4
 y: .space 4
 
-# @@ Formats
-scanf_int_format: .asciz "%ld"
-scanf_debug_format: .asciz "DBG: %ld\n"
-
 # @@ Loops
-i: .long 0
-j: .long 0
-k: .long 0
+i: .space 4
+j: .space 4
+k: .space 4
+
+# @@ Formats / Strings
+scanf_int_format: .asciz "%ld"
+debug_format1: .asciz "DBG: %ld\n"
+debug_format2: .asciz "DBG2: %ld\n"
+printf_elm: .asciz "%ld "
+printf_nl: .asciz "\n"
+toStr: .asciz "To: %ld\n"
 
 # !!! REMINDERS !!!
 # - Don't forget to always make i, j, k = 0 before you use them in a loop
@@ -52,6 +51,9 @@ scanf_n:
     popl %ebx
     popl %ebx
 
+    # for the border
+    incl n
+
 # m - scanf("%d", &m);
 scanf_m:
     pushl $m
@@ -61,6 +63,9 @@ scanf_m:
 
     popl %ebx
     popl %ebx
+
+    # for the border
+    incl m
 
 # m - scanf("%d", &m);
 scanf_p:
@@ -73,11 +78,10 @@ scanf_p:
     popl %ebx
 
 # pos - scanf;
-    movl $0, i
-
 # while i < p
+movl $0, i
 scanf_pos:
-# read x
+# scanf("%ld", &x)
     pushl $x
     pushl $scanf_int_format
 
@@ -86,7 +90,7 @@ scanf_pos:
     popl %ebx
     popl %ebx
 
-# read y
+# scanf("%ld", &y)
     pushl $y
     pushl $scanf_int_format
 
@@ -95,45 +99,33 @@ scanf_pos:
     popl %ebx
     popl %ebx
 
+    # to compensate for borders
+    incl y
+    incl x
 
-# add into the array: a(b, c, d) = b + c * d + a
-# can also think like: offset(start, index, type_size)
-# -> start + index * type_size + offset
 
-# put x into its array
-# load the array
-lea pos_x, %edi
+# matrix[x][y] = 1
+    movl x, %eax
+    movl $0, %edx
+    mull m
+    addl y, %eax
+    # now eax = x * m + y
 
-# get the index in a register
-movl $i, %ecx
+    lea matrix, %edi
+    movl $1, (%edi, %eax, 4)
 
-# insert 
-    # TODO
-movl $x, (%edi, %ecx, 4)
+    pushl %eax
+    pushl $toStr
 
-# move %edi back to the variable
+    call printf
 
-movl %edi, pos_x
+    popl %ebx
+    popl %ebx
 
-# put y into its array
-# load the array
-lea pos_y, %edi
-
-# index is already in ecx
-
-# insert 
-    # TODO
-movl $y, (%edi, %ecx, 4)
-
-movl %edi, pos_y
-
-# i++
-    addl $1, i
-
+    incl i
 # while i < p
     movl i, %eax
-    movl p, %ebx
-    cmpl %eax, %ebx # p - i
+    cmpl %eax, p # p - i
     jg scanf_pos
 
 # k - scanf("%d", &k);
@@ -149,7 +141,10 @@ scanf_k:
 # @@ Debug
 printf_n:
     pushl n
-    pushl $scanf_debug_format
+    movl n, %eax
+    decl %eax
+    pushl %eax
+    pushl $debug_format1
 
     call printf
 
@@ -157,8 +152,10 @@ printf_n:
     popl %ebx
 
 printf_m:
-    pushl m
-    pushl $scanf_debug_format
+    movl m, %eax
+    decl %eax
+    pushl %eax
+    pushl $debug_format1
 
     call printf
 
@@ -167,72 +164,56 @@ printf_m:
 
 printf_p:
     pushl p
-    pushl $scanf_debug_format
+    pushl $debug_format1
 
     call printf
 
     popl %ebx
     popl %ebx
 
-# i = 0
+# TODO: remove borders
+printf_matrix:
     movl $0, i
-printf_pos:
-# get x
+    for_i:
+        movl $0, j
+        for_j:
+            # eax = i * m + j
+            movl i, %eax
+            movl $0, %edx
+            mull m
+            addl j, %eax
 
-# load the array
-    lea pos_x, %edi
+            # the cell at [i][j]
+            lea matrix, %edi
+            movl (%edi, %eax, 4), %ecx
 
-# put the index in register
-    movl i, %ecx
+            # print cell
+            pushl %ecx
+            pushl $printf_elm
 
-# retrieve the number
-    # TODO
-    movl (%edi, %ecx, 4), %eax
-    movl %eax, x
+            call printf
 
-#get y
+            popl %ebx
+            popl %ebx
 
-# load the array
-    lea pos_y, %edi
+            incl j
+            movl j, %eax
+            cmp %eax, m
+            jge for_j
 
-# index already in register
+        #print a new line
+        pushl $printf_nl
+        call printf
+        popl %ebx
 
-# retrieve the number
-    # TODO
-    movl (%edi, %ecx, 4), %eax
-    movl %eax, y
-
-# print x
-    pushl x
-    pushl $scanf_debug_format
-
-    call printf
-
-    popl %ebx
-    popl %ebx
-
-# print y
-    pushl x
-    pushl $scanf_debug_format
-
-    call printf
-
-    popl %ebx
-    popl %ebx
-
-# i++
-    addl $1, i
-
-# while i < p
-    movl i, %eax
-    movl p, %ebx
-    cmpl %eax, %ebx # p - i
-    jg printf_pos
-
+        incl i
+        movl i, %eax
+        cmp %eax, n
+        jge for_i
 
 printf_k:
     pushl k
-    pushl $scanf_debug_format
+    pushl $debug_format1
 
     call printf
 
