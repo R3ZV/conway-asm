@@ -42,7 +42,7 @@ int main() {
                     grid[i][j] = 1;
                 }
                 if (cnt == 2) {
-                    grid[i][j] = 1 * prev[i][j];
+                    grid[i][j] = prev[i][j];
                 }
             }
         }
@@ -51,20 +51,8 @@ int main() {
     // print answer
     for (int i = 1; i <= n; i++) {
         for (int j = 1; j <= m; j++) {
-            printf("%d", grid[i][j]);
-            if (j < m) {
-                printf(" ");
-            }
+            printf("%d ", grid[i][j]);
         }
-        if (i < n) {
-            printf("\n");
-        }
+        printf("\n");
     }
 }
-
-
-// 0 0 0 0 0 0
-// 0 0 1 1 0 1
-// 0 1 0 0 0 0
-// 0 0 0 1 1 0
-// 1 0 0 0 0 0

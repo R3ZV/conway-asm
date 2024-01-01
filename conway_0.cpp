@@ -2,7 +2,6 @@
 #include <utility>
 #include <vector>
 
-
 //                      N   NE  E  SE S SW    W  NW
 std::vector<int> di = {-1,  -1, 0, 1, 1,  1,  0, -1};
 std::vector<int> dj = { 0,   1, 1, 1, 0, -1, -1, -1};
@@ -65,14 +64,9 @@ int main() {
     std::vector<std::vector<int>> ans = conway(n, m, v, k);
     for (int i = 1; i <= n; ++i) {
         for (int j = 1; j <= m; ++j) {
-            std::cout << ans[i][j];
-            if (j < m) {
-                std::cout << " ";
-            }
+            std::cout << ans[i][j] << " ";
         }
-        if (i < n) {
-            std::cout << "\n";
-        }
+        std::cout << "\n";
     }
     return 0;
 }
