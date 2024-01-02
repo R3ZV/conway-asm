@@ -71,7 +71,7 @@ impl TestCase {
         // 0 <= k <= 15
         test.k = rng.gen_range(0..=15);
 
-        if task == "2" {
+        if task == "1" {
             // 0 <= opr <= 1
             test.opr = rng.gen_range(0..=1);
 

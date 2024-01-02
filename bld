@@ -1,7 +1,8 @@
 gcc -m32 -no-pie -o t0 152_Maracine_ConstantinRazvan_0.s
 gcc -m32 -no-pie -o t1 152_Maracine_ConstantinRazvan_1.s
 gcc -m32 -no-pie -o t2 152_Maracine_ConstantinRazvan_2.s
-gcc -m32 -no-pie -o test test.s
 
 gcc -o sol conway.c
-g++ -o brute conway_0.cpp
+g++ -o brute0 conway_0.cpp
+g++ -o brute1 conway_1.cpp
+g++ -o brute2 conway_2.cpp
