@@ -16,16 +16,20 @@ matrix_aux: .space 2500
 x: .space 4
 y: .space 4
 
+#          N   NE  E  SE S SW    W  NW
+di: .long -1,  -1, 0, 1, 1,  1,  0, -1
+dj: .long 0,   1, 1, 1, 0, -1, -1, -1;
+
 alive_ngb: .space 4
 
 # @@ Loops
 i: .space 4
 j: .space 4
+d: .space 4
 gen: .space 4
 
 # @@ Formats / Strings
-scanf_int_format: .asciz "%ld\n"
-debug_format1: .asciz "DBG: %ld\n"
+scanf_format: .asciz "%ld\n"
 printf_elm: .asciz "%ld "
 printf_nl: .asciz "\n"
 
@@ -40,7 +44,7 @@ main:
 # n - scanf("%d", &n);
 scanf_n:
     pushl $n
-    pushl $scanf_int_format
+    pushl $scanf_format
 
     call scanf
 
@@ -53,7 +57,7 @@ scanf_n:
 # m - scanf("%d", &m);
 scanf_m:
     pushl $m
-    pushl $scanf_int_format
+    pushl $scanf_format
 
     call scanf
 
@@ -66,24 +70,24 @@ scanf_m:
 # m - scanf("%d", &m);
 scanf_p:
     pushl $p
-    pushl $scanf_int_format
+    pushl $scanf_format
 
     call scanf
 
     popl %ebx
     popl %ebx
 
-# in case we don't have any points jmp to scanf_k
-movl $0, %eax
-cmp %eax, p
-je scanf_k
 # pos - scanf;
-# while i < p
 movl $0, i
 scanf_pos:
+    # while i < p
+    movl i, %eax
+    cmpl %eax, p
+    jle scanf_k
+
 # scanf("%ld", &x)
     pushl $x
-    pushl $scanf_int_format
+    pushl $scanf_format
 
     call scanf
 
@@ -92,7 +96,7 @@ scanf_pos:
 
 # scanf("%ld", &y)
     pushl $y
-    pushl $scanf_int_format
+    pushl $scanf_format
 
     call scanf
 
@@ -114,16 +118,14 @@ scanf_pos:
     lea matrix, %edi
     movl $1, (%edi, %eax, 4)
 
+    # i++
     incl i
-# while i < p
-    movl i, %eax
-    cmpl %eax, p # p - i
-    jg scanf_pos
+    jmp scanf_pos
 
 # k - scanf("%d", &k);
 scanf_k:
     pushl $k
-    pushl $scanf_int_format
+    pushl $scanf_format
 
     call scanf
 
@@ -136,7 +138,7 @@ movl $0, gen
 while_gen:
     # while (gen < k)
     movl gen, %eax
-    cmp %eax, k
+    cmpl %eax, k
     jle print_matrix
 
     # copy curr matrix to aux matrix
@@ -144,14 +146,14 @@ while_gen:
     # while (i <= n)
     while_cp_i:
         movl i, %eax
-        cmp %eax, n
+        cmpl %eax, n
         jle continue_cp_exit
 
         movl $0, j
         # while (j <= m)
         while_cp_j:
             movl j, %eax
-            cmp %eax, m
+            cmpl %eax, m
             jl continue_cp
 
             # idx(eax) = i * m + j
@@ -183,118 +185,63 @@ while_gen:
     # while (i < n)
     while_gen_i:
         movl i, %eax
-        cmp %eax, n
+        cmpl %eax, n
         jle continue_gen_exit
 
         movl $1, j
         # while (j < m)
         while_gen_j:
         movl j, %eax
-        cmp %eax, m
+        cmpl %eax, m
         jle continue_gen
 
 
         movl $0, alive_ngb
 
-        # load the aux matrix
-        lea matrix_aux, %edi
+        # while(d < 8)
+        movl $0, d
+        while_gen_d:
+            movl $8, %eax
+            cmpl d, %eax
+            jle continue_gen_d
 
-        # 1. check neighbour at (N) (i - 1, j)
+            movl d, %eax
 
-        # idx(eax) = (i - 1) * m + j
-        movl i, %eax
-        decl %eax
-        movl $0, %edx
-        mull m
-        addl j, %eax
+            # x = di[d]
+            lea di, %edi
+            movl (%edi, %eax, 4), %ebx
+            movl %ebx, x
 
-        # curr(ebx) = v_aux[idx]
-        movl (%edi, %eax, 4), %ebx
-        addl %ebx, alive_ngb
+            # y = dj[d]
+            lea dj, %edi
+            movl (%edi, %eax, 4), %ebx
+            movl %ebx, y
 
-        # 2. check neighbour at (NE) (i - 1, j + 1)
-        movl i, %eax
-        decl %eax
-        movl $0, %edx
-        mull m
-        addl j, %eax
-        incl %eax
+            # idx(eax) = (i + di[d]) * m + (j + dj[d])
+            movl i, %eax
+            movl $0, %edx
+            addl x, %eax
+            mull m
+            addl j, %eax
+            addl y, %eax
 
-        # curr(ebx) = v_aux[idx]
-        movl (%edi, %eax, 4), %ebx
-        addl %ebx, alive_ngb
+            # load the aux matrix
+            lea matrix_aux, %edi
 
-        # 3. check neighbour at (E) (i, j + 1)
-        movl i, %eax
-        movl $0, %edx
-        mull m
-        addl j, %eax
-        incl %eax
+            # curr(ebx) = v_aux[idx]
+            movl (%edi, %eax, 4), %ebx
+            addl %ebx, alive_ngb
 
-        # curr(ebx) = v_aux[idx]
-        movl (%edi, %eax, 4), %ebx
-        addl %ebx, alive_ngb
+            # d++
+            incl d
+            jmp while_gen_d
 
-        # 4. check neighbour at (SE) (i + 1, j + 1)
-        movl i, %eax
-        incl %eax
-        movl $0, %edx
-        mull m
-        addl j, %eax
-        incl %eax
-
-        # curr(ebx) = v_aux[idx]
-        movl (%edi, %eax, 4), %ebx
-        addl %ebx, alive_ngb
-
-        # 5. check neighbour at (S) (i + 1, j)
-        movl i, %eax
-        incl %eax
-        movl $0, %edx
-        mull m
-        addl j, %eax
-
-        # curr(ebx) = v_aux[idx]
-        movl (%edi, %eax, 4), %ebx
-        addl %ebx, alive_ngb
-
-        # 6. check neighbour at (SW) (i + 1, j - 1)
-        movl i, %eax
-        incl %eax
-        movl $0, %edx
-        mull m
-        addl j, %eax
-        decl %eax
-
-        # curr(ebx) = v_aux[idx]
-        movl (%edi, %eax, 4), %ebx
-        addl %ebx, alive_ngb
-
-        # 7. check neighbour at (W) (i, j - 1)
-        movl i, %eax
-        movl $0, %edx
-        mull m
-        addl j, %eax
-        decl %eax
-
-        # curr(ebx) = v_aux[idx]
-        movl (%edi, %eax, 4), %ebx
-        addl %ebx, alive_ngb
-
-        # 8. check neighbour at (NW) (i - 1, j - 1)
-        movl i, %eax
-        decl %eax
-        movl $0, %edx
-        mull m
-        addl j, %eax
-        decl %eax
-
-        # curr(ebx) = v_aux[idx]
-        movl (%edi, %eax, 4), %ebx
-        addl %ebx, alive_ngb
+        continue_gen_d:
 
         # now we got the alive neighbouring cells
         # we just also need to keep track of the current cell state for future checks
+
+        lea matrix_aux, %edi
 
         # idx(eax) = i * m + j
         movl i, %eax
@@ -320,7 +267,7 @@ while_gen:
 
         movl alive_ngb, %ecx
         # if (alive_ngb(ecx) == 3) then make 1
-        cmp $3, %ecx
+        cmpl $3, %ecx
         jne alive_ngb_3_false
 
         movl $1, (%edi, %eax, 4)
@@ -328,7 +275,7 @@ while_gen:
         alive_ngb_3_false:
 
         # if (alive_ngb(ecx) == 2) then make as prev
-        cmp $2, %ecx
+        cmpl $2, %ecx
         jne alive_ngb_2_false
 
         movl %ebx, (%edi, %eax, 4)
@@ -355,14 +302,14 @@ print_matrix:
     # while (i < n)
     while_i:
         movl i, %eax
-        cmp %eax, n
+        cmpl %eax, n
         jle continue_print
 
         movl $1, j
         # while (j < m)
         while_j:
             movl j, %eax
-            cmp %eax, m
+            cmpl %eax, m
             jle continue_print_j
 
             # eax = i * m + j
