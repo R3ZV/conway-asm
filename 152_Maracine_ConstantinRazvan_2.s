@@ -71,7 +71,7 @@ popl %ebx
 
 movl %eax, fp2
 
-# n - fscanf(file_pointer, "%d", &n);
+# n - fscanf(file_pointer, "%ld", &n);
 fscanf_n:
     pushl $n
     pushl $fscanf_format
@@ -86,7 +86,7 @@ fscanf_n:
     # for the border
     incl n
 
-# m - fscanf(file_pointer, "%d", &m);
+# m - fscanf(file_pointer, "%ld", &m);
 fscanf_m:
     pushl $m
     pushl $fscanf_format
@@ -101,7 +101,7 @@ fscanf_m:
     # for the border
     incl m
 
-# p - fscanf(file_pointer, "%d", &p);
+# p - fscanf(file_pointer, "%ld", &p);
 fscanf_p:
     pushl $p
     pushl $fscanf_format
@@ -121,7 +121,7 @@ fscanf_pos:
     cmpl %eax, p
     jle fscanf_k
 
-    # x - fscanf(file_pointer, "%d", &x);
+    # x - fscanf(file_pointer, "%ld", &x);
     fscanf_x:
         pushl $x
         pushl $fscanf_format
@@ -133,7 +133,7 @@ fscanf_pos:
         popl %ebx
         popl %ebx
 
-    # y - fscanf(file_pointer, "%d", &y);
+    # y - fscanf(file_pointer, "%ld", &y);
     fscanf_y:
         pushl $y
         pushl $fscanf_format
@@ -154,8 +154,9 @@ fscanf_pos:
     movl x, %eax
     movl $0, %edx
     mull m
+    addl x, %eax
     addl y, %eax
-    # now eax = x * m + y
+    # now eax = x * (m + 1) + y
 
     lea matrix, %edi
     movl $1, (%edi, %eax, 4)
@@ -164,7 +165,7 @@ fscanf_pos:
     incl i
     jmp fscanf_pos
 
-# k - fscanf(file_pointer, "%d", &k);
+# k - fscanf(file_pointer, "%ld", &k);
 fscanf_k:
     pushl $k
     pushl $fscanf_format
@@ -190,7 +191,7 @@ while_gen:
     while_cp_i:
         movl i, %eax
         cmpl %eax, n
-        jle continue_cp_exit
+        jl continue_cp_exit
 
         movl $0, j
         # while (j <= m)
@@ -203,6 +204,7 @@ while_gen:
             movl i, %eax
             movl $0, %edx
             mull m
+            addl i, %eax
             addl j, %eax
 
             # curr(ebx) = v[idx]
@@ -262,9 +264,14 @@ while_gen:
 
             # idx(eax) = (i + di[d]) * m + (j + dj[d])
             movl i, %eax
-            movl $0, %edx
             addl x, %eax
+
+            movl $0, %edx
             mull m
+
+            addl x, %eax
+            addl i, %eax
+
             addl j, %eax
             addl y, %eax
 
@@ -290,6 +297,7 @@ while_gen:
         movl i, %eax
         movl $0, %edx
         mull m
+        addl i, %eax
         addl j, %eax
 
         # curr(ebx) = v_aux[idx]
@@ -303,6 +311,7 @@ while_gen:
         movl i, %eax
         movl $0, %edx
         mull m
+        addl i, %eax
         addl j, %eax
 
         # matrix[i][j] = 0
@@ -360,6 +369,7 @@ print_matrix:
             movl i, %eax
             movl $0, %edx
             mull m
+            addl i, %eax
             addl j, %eax
 
             # the cell at [i][j]

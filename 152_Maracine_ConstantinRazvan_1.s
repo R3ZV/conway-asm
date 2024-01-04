@@ -5,6 +5,8 @@ n: .space 4
 m: .space 4
 p: .space 4
 k: .space 4
+opr: .space 4
+str: .space 50
 
 # The matrix can have at most 4 * 18 * 18 elements
 # but we will also add a border to each side
@@ -15,6 +17,10 @@ matrix_aux: .space 2500
 # temp variables to read coordinates
 x: .space 4
 y: .space 4
+xor: .space 4
+c: .space 4
+num1: .space 4
+num2: .space 4
 
 #          N   NE  E  SE S SW    W  NW
 di: .long -1,  -1, 0, 1, 1,  1,  0, -1
@@ -28,10 +34,19 @@ j: .space 4
 d: .space 4
 gen: .space 4
 
+bit_id: .space 4
+mod: .space 4
+
 # @@ Formats / Strings
-scanf_format: .asciz "%ld\n"
-printf_elm: .asciz "%ld "
+scanf_format: .asciz "%ld"
+scanf_format_str: .asciz "%s"
+printf_hex: .asciz "0x"
+printf_elm_hex: .asciz "%02X"
+printf_elm: .asciz "%c"
 printf_nl: .asciz "\n"
+dbg_int: .asciz "Have int: %ld\n"
+dbg_char: .asciz "Have char: %c\n"
+dbg_str: .asciz "Have str: %s\n"
 
 .text
 
@@ -41,7 +56,7 @@ main:
 
 # @@ Read the input
 
-# n - scanf("%d", &n);
+# n - scanf("%ld", &n);
 scanf_n:
     pushl $n
     pushl $scanf_format
@@ -54,7 +69,7 @@ scanf_n:
     # for the border
     incl n
 
-# m - scanf("%d", &m);
+# m - scanf("%ld", &m);
 scanf_m:
     pushl $m
     pushl $scanf_format
@@ -67,7 +82,7 @@ scanf_m:
     # for the border
     incl m
 
-# m - scanf("%d", &m);
+# p - scanf("%ld", &p);
 scanf_p:
     pushl $p
     pushl $scanf_format
@@ -112,6 +127,7 @@ scanf_pos:
     movl x, %eax
     movl $0, %edx
     mull m
+    addl x, %eax
     addl y, %eax
     # now eax = x * m + y
 
@@ -122,7 +138,7 @@ scanf_pos:
     incl i
     jmp scanf_pos
 
-# k - scanf("%d", &k);
+# k - scanf("%ld", &k);
 scanf_k:
     pushl $k
     pushl $scanf_format
@@ -132,14 +148,46 @@ scanf_k:
     popl %ebx
     popl %ebx
 
-# @@ Main logic
+# opr - scanf("%ld", &opr);
+scanf_opr:
+    pushl $opr
+    pushl $scanf_format
 
+    call scanf
+
+    popl %ebx
+    popl %ebx
+
+# str - scanf("%s", &str);
+scanf_str:
+    pushl $str
+    pushl $scanf_format_str
+
+    call scanf
+
+    popl %ebx
+    popl %ebx
+
+# mod is (n + 1) * (m + 1) after our increment
+# so actually it is (n + 2) * (m + 2)
+movl $0, %edx
+
+movl n, %eax
+incl %eax
+
+movl m, %ebx
+incl %ebx
+
+mull %ebx
+movl %eax, mod
+
+# @@ Main logic
 movl $0, gen
 while_gen:
     # while (gen < k)
     movl gen, %eax
     cmpl %eax, k
-    jle print_matrix
+    jle print_ans
 
     # copy curr matrix to aux matrix
     movl $0, i
@@ -147,7 +195,7 @@ while_gen:
     while_cp_i:
         movl i, %eax
         cmpl %eax, n
-        jle continue_cp_exit
+        jl continue_cp_exit
 
         movl $0, j
         # while (j <= m)
@@ -156,10 +204,11 @@ while_gen:
             cmpl %eax, m
             jl continue_cp
 
-            # idx(eax) = i * m + j
+            # idx(eax) = i * (m + 1) + j
             movl i, %eax
             movl $0, %edx
             mull m
+            addl i, %eax
             addl j, %eax
 
             # curr(ebx) = v[idx]
@@ -195,7 +244,6 @@ while_gen:
         cmpl %eax, m
         jle continue_gen
 
-
         movl $0, alive_ngb
 
         # while(d < 8)
@@ -217,11 +265,16 @@ while_gen:
             movl (%edi, %eax, 4), %ebx
             movl %ebx, y
 
-            # idx(eax) = (i + di[d]) * m + (j + dj[d])
+            # idx(eax) = (i + di[d]) * (m + 1) + (j + dj[d])
             movl i, %eax
-            movl $0, %edx
             addl x, %eax
+
+            movl $0, %edx
             mull m
+
+            addl i, %eax
+            addl x, %eax
+
             addl j, %eax
             addl y, %eax
 
@@ -243,10 +296,11 @@ while_gen:
 
         lea matrix_aux, %edi
 
-        # idx(eax) = i * m + j
+        # idx(eax) = i * (m + 1) + j
         movl i, %eax
         movl $0, %edx
         mull m
+        addl i, %eax
         addl j, %eax
 
         # curr(ebx) = v_aux[idx]
@@ -256,10 +310,11 @@ while_gen:
         # load the matrix
         lea matrix, %edi
 
-        # idx(eax) = i * m + j
+        # idx(eax) = i * (m + 1) + j
         movl i, %eax
         movl $0, %edx
         mull m
+        addl i, %eax
         addl j, %eax
 
         # matrix[i][j] = 0
@@ -297,61 +352,158 @@ while_gen:
     jmp while_gen
 
 # @@ Answer
-print_matrix:
-    movl $1, i
-    # while (i < n)
-    while_i:
-        movl i, %eax
-        cmpl %eax, n
-        jle continue_print
+print_ans:
+    # if opr == 1 then make j = 3
+    movl $3, j
 
-        movl $1, j
-        # while (j < m)
-        while_j:
-            movl j, %eax
-            cmpl %eax, m
-            jle continue_print_j
+    movl $1, %eax
+    cmp opr, %eax
+    je conversion
 
-            # eax = i * m + j
-            movl i, %eax
-            movl $0, %edx
-            mull m
-            addl j, %eax
+    # else make j = 0 and print("0x")
+    movl $0, j
 
-            # the cell at [i][j]
-            lea matrix, %edi
-            movl (%edi, %eax, 4), %ecx
+    # printf("0x");
+    pushl $printf_hex
+    call printf
+    popl %ebx
 
-            # print cell
-            pushl %ecx
-            pushl $printf_elm
+    # 0 = encoding / 1 = decoding
+    conversion:
+        # while (s[j] != \0)
+        lea str, %edi
+        movl j, %ecx
+        movl $0, %eax
+        movzbl (%edi, %ecx, 1), %eax
+        movl %eax, num1
+        movl $0, %ebx
+        cmp %eax, %ebx
+        je print_endl
 
-            call printf
+        # num1 = s[j]
+        # so if opr == 0 we don't need to change num1 
+        movl $0, %ecx
+        cmp opr, %ecx
+        je get_num2
 
-            popl %ebx
-            popl %ebx
+        # else (opr == 1)
+        lea str, %edi
+        movl j, %ecx
+        decl %ecx
+        movzbl (%edi, %ecx, 1), %eax
+        movl %eax, num1
+        subl $48, num1 # convert 0-9 chars into digit
 
-            # flush the output
-            pushl $0
-            call fflush
-            popl %ebx
+        # if it is a upper case letter we need to substract 7
+        movl $9, %eax
+        cmp num1, %eax
+        jge second_char # this means that in %eax there is digit
+        subl $7, num1
 
-            incl j
-            jmp while_j
-            continue_print_j:
-        #print a new line
-        pushl $printf_nl
+        second_char:
+            movl num1, %eax
+            shl $4, %eax # shift 4 times to make space for the second letter
+            movl %eax, num1
+
+            lea str, %edi
+            movl j, %ecx
+            movzbl (%edi, %ecx, 1), %ebx
+            subl $48, %ebx # convert 0-9 chars into digit
+            movl $9, %ecx
+            cmp %ebx, %ecx
+            jge get_num2 # in ebx ther is a digit
+            subl $7, %ebx
+
+        get_num2:
+            addl %ebx, num1 # append the second char to the first
+
+            movl $0, num2
+            # for (int i = 7; i >= 0; --i) {
+            movl $7, i 
+            for_i_bit:
+                movl $0, %ecx
+                cmp i, %ecx
+                jg print_the_conversion
+
+                # num2 |= (1 << i) * matrix[bit_id];
+                lea matrix, %edi
+                movl bit_id, %ecx
+                movl (%edi, %ecx, 4), %eax # = matrix[bit_id]
+
+                # ebx = (1 << i)
+                movl $1, %ebx
+                movl i, %ecx
+                shl %ecx, %ebx
+
+                movl $0, %edx
+                mull %ebx
+
+                movl num2, %ebx
+                orl %eax, %ebx
+                movl %ebx, num2
+
+                incl bit_id
+                movl mod, %ebx
+                cmp bit_id, %ebx
+                jg incr_for_i_bit
+                movl $0, bit_id
+                incr_for_i_bit:
+                    decl i
+                    jmp for_i_bit
+        print_the_conversion:
+        movl num1, %eax
+        movl num2, %ebx
+        xorl %ebx, %eax # res
+        movl %eax, xor
+        # if opr == 1 print a char
+        movl $0, %ecx
+        cmp opr, %ecx
+        je print_a_hex_val
+
+        # print a char
+        pushl xor
+        pushl $printf_elm
         call printf
         popl %ebx
+        popl %ebx
 
-        # flush the output
+        # flush
         pushl $0
         call fflush
         popl %ebx
 
-        incl i
-        jmp while_i
-        continue_print:
+        jmp incr
+
+        # else print a hex
+        print_a_hex_val:
+            pushl xor
+            pushl $printf_elm_hex
+            call printf
+            popl %ebx
+            popl %ebx
+
+            # flush
+            pushl $0
+            call fflush
+            popl %ebx
+
+        incr:
+            incl j
+            movl opr, %eax
+            addl %eax, j
+            jmp conversion
+
+
+# print a new line
+print_endl:
+    pushl $printf_nl
+    call printf
+    popl %ebx
+
+# flush
+pushl $0
+call fflush
+popl %ebx
 
 # (exit)
 movl $1, %eax

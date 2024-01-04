@@ -73,13 +73,15 @@ int main() {
     }
 
     int mod = bits.size();
-    int bit_id = 0, eax = 0, ebx = 0, j = 0;
+    int j = 0;
     if (type == 0) {
         printf("0x");
         j = 0;
     } else {
         j = 3;
     }
+
+    int bit_id = 0, eax = 0, ebx = 0;
     while (j < (int)s.size()) {
         if (type == 0) {
             eax = s[j];
@@ -101,7 +103,7 @@ int main() {
             }
         }
         if (type == 0) {
-            printf("%X", eax ^ ebx);
+            printf("%02X", eax ^ ebx);
         } else {
             printf("%c", eax ^ ebx);
         }

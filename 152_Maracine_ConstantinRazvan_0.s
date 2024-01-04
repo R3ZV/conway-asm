@@ -29,7 +29,7 @@ d: .space 4
 gen: .space 4
 
 # @@ Formats / Strings
-scanf_format: .asciz "%ld\n"
+scanf_format: .asciz "%ld"
 printf_elm: .asciz "%ld "
 printf_nl: .asciz "\n"
 
@@ -41,7 +41,7 @@ main:
 
 # @@ Read the input
 
-# n - scanf("%d", &n);
+# n - scanf("%ld", &n);
 scanf_n:
     pushl $n
     pushl $scanf_format
@@ -54,7 +54,7 @@ scanf_n:
     # for the border
     incl n
 
-# m - scanf("%d", &m);
+# m - scanf("%ld", &m);
 scanf_m:
     pushl $m
     pushl $scanf_format
@@ -67,7 +67,7 @@ scanf_m:
     # for the border
     incl m
 
-# m - scanf("%d", &m);
+# p - scanf("%ld", &p);
 scanf_p:
     pushl $p
     pushl $scanf_format
@@ -112,8 +112,10 @@ scanf_pos:
     movl x, %eax
     movl $0, %edx
     mull m
+    addl x, %eax
     addl y, %eax
-    # now eax = x * m + y
+    # now eax = x * (m + 1) + y
+    # we do (m + 1) because there are m + 1 elements on a line
 
     lea matrix, %edi
     movl $1, (%edi, %eax, 4)
@@ -122,7 +124,7 @@ scanf_pos:
     incl i
     jmp scanf_pos
 
-# k - scanf("%d", &k);
+# k - scanf("%ld", &k);
 scanf_k:
     pushl $k
     pushl $scanf_format
@@ -133,7 +135,6 @@ scanf_k:
     popl %ebx
 
 # @@ Main logic
-
 movl $0, gen
 while_gen:
     # while (gen < k)
@@ -147,7 +148,7 @@ while_gen:
     while_cp_i:
         movl i, %eax
         cmpl %eax, n
-        jle continue_cp_exit
+        jl continue_cp_exit
 
         movl $0, j
         # while (j <= m)
@@ -156,10 +157,11 @@ while_gen:
             cmpl %eax, m
             jl continue_cp
 
-            # idx(eax) = i * m + j
+            # idx(eax) = i * (m + 1) + j
             movl i, %eax
             movl $0, %edx
             mull m
+            addl i, %eax
             addl j, %eax
 
             # curr(ebx) = v[idx]
@@ -195,7 +197,6 @@ while_gen:
         cmpl %eax, m
         jle continue_gen
 
-
         movl $0, alive_ngb
 
         # while(d < 8)
@@ -219,9 +220,14 @@ while_gen:
 
             # idx(eax) = (i + di[d]) * m + (j + dj[d])
             movl i, %eax
-            movl $0, %edx
             addl x, %eax
+
+            movl $0, %edx
             mull m
+
+            addl i, %eax
+            addl x, %eax
+
             addl j, %eax
             addl y, %eax
 
@@ -247,6 +253,7 @@ while_gen:
         movl i, %eax
         movl $0, %edx
         mull m
+        addl i, %eax
         addl j, %eax
 
         # curr(ebx) = v_aux[idx]
@@ -260,6 +267,7 @@ while_gen:
         movl i, %eax
         movl $0, %edx
         mull m
+        addl i, %eax
         addl j, %eax
 
         # matrix[i][j] = 0
@@ -316,6 +324,7 @@ print_matrix:
             movl i, %eax
             movl $0, %edx
             mull m
+            addl i, %eax
             addl j, %eax
 
             # the cell at [i][j]
